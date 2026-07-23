@@ -3,18 +3,24 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
-    env_file:
-      - ./backend/.env
     environment:
-      - DATABASE_URL=sqlite:////app/data/canvas.db
+      DATABASE_URL: sqlite:////app/data/studentos.db
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      GOOGLE_SHEETS_API_KEY: ${GOOGLE_SHEETS_API_KEY:-}
+      GOOGLE_SHEET_URL: ${GOOGLE_SHEET_URL:-}
+      AUTO_SYNC_ENABLED: ${AUTO_SYNC_ENABLED:-false}
+      SYNC_INTERVAL_MINUTES: ${SYNC_INTERVAL_MINUTES:-60}
     volumes:
-      - ./backend/data:/app/data
+      - backend-data:/app/data
 
   frontend:
     build: ./frontend
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_URL=http://localhost:8000
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     depends_on:
       - backend
+
+volumes:
+  backend-data:

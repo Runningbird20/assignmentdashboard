@@ -1,145 +1,165 @@
-# Canvas Dashboard
+# StudentOS
 
-A minimal MVP that syncs assignments from the [Canvas LMS](https://www.instructure.com/canvas) API into a local database, displays them in a simple dashboard, and posts a Slack summary whenever new assignments are discovered.
+A personal productivity dashboard for college students: classes, assignments, a
+monthly calendar and a personal to-do list in one place, with one-click import
+of assignments from a Google Sheet.
 
-No AI/LLMs are used anywhere in this project.
+- **Dashboard** — greeting, today's schedule, today's tasks, assignments due
+  today and this week, upcoming events, and quick statistics.
+- **Classes** — professor, location, meeting days/time, office hours and a
+  color used everywhere the class appears.
+- **Assignments** — searchable, sortable table with status, priority and notes.
+- **To-dos** — personal tasks with drag-and-drop ordering.
+- **Calendar** — month view combining class meetings, assignment due dates,
+  to-dos and events; click anything for details.
+- **Settings** — light/dark/system theme, Google Sheet URL, notification
+  preferences.
 
-## Features
+No AI, no accounts — a fast local-first tool.
 
-- Periodic (hourly) and on-demand sync from the Canvas REST API
-- Assignments persisted to SQLite via SQLAlchemy
-- Detection of newly discovered assignments, with a single Slack summary per sync
-- A React dashboard with four views: **Due Today**, **Due This Week**, **Recently Added**, **Overdue**
+## Tech Stack
 
-## Architecture
+| Layer    | Technology |
+| -------- | ---------- |
+| Frontend | React 19, TypeScript, Vite, TailwindCSS v4, shadcn-style UI kit, React Router, TanStack Query |
+| Backend  | Python 3.12, FastAPI, SQLAlchemy 2, SQLite, Pydantic v2, APScheduler |
+| Infra    | Docker Compose |
+
+## Project Structure
 
 ```
-backend/                     FastAPI application
+backend/
   app/
-    api/         routes + Pydantic response schemas
-    canvas/      Canvas API client + response schemas
-    database/    engine/session, ORM Base, repository
-    models/      SQLAlchemy Assignment model
-    scheduler/   APScheduler wrapper (startup + hourly sync)
-    services/    sync service (Canvas -> DB -> Slack)
-    slack/       Slack Incoming Webhook notifier
-    utils/       time helpers
-    config.py    settings loaded from .env
-    main.py      app factory, CORS, lifespan
-frontend/                    React + Vite + TypeScript + Tailwind
+    api/          # Router aggregation + shared dependencies (DbSession)
+    core/         # Settings (pydantic-settings) + domain exceptions
+    database/     # Engine/session, declarative Base, seed script
+    models/       # SQLAlchemy models: SchoolClass, Assignment, Todo, Event
+    schemas/      # Pydantic request/response schemas
+    services/     # Business logic: CRUD, dashboard, Google Sheets import
+    routers/      # Thin FastAPI endpoint modules
+    scheduler/    # APScheduler background jobs (sheet auto-sync)
+    utils/        # Date helpers
+frontend/
   src/
-    api/         typed fetch client
-    components/  AssignmentCard, Section
-    pages/       Dashboard
+    api/          # Typed fetch client + one module per resource
+    components/   # ui/ (shadcn-style kit), shared/, layout/, feature dirs
+    hooks/        # TanStack Query hooks, theme, settings, localStorage
+    layouts/      # App shell (sidebar + navbar + outlet)
+    pages/        # One component per route
+    types/        # API types mirrored from backend schemas
+    utils/        # cn(), date formatting, constants
 docker-compose.yml
+.env.example
 ```
 
-The layers are kept separate: the **API** talks to a **repository** and a **service**; the **service** orchestrates the **Canvas client**, the **repository**, and the **Slack notifier**. Database access lives entirely behind `AssignmentRepository`.
+Routers stay thin: every endpoint delegates to a service, and services own all
+database access. That keeps validation rules (duplicate class names, duplicate
+assignments per class) in one place and leaves room for the planned
+integrations (Canvas sync, Google Calendar, Slack/Discord notifications, grade
+tracking, notes, uploads, auth) to land as new `services/` + `routers/`
+modules without touching existing code.
 
-## Prerequisites
+## Running Locally
 
-- Python 3.12+
-- Node.js 20+
-- A Canvas personal access token (Canvas → *Account* → *Settings* → *New Access Token*)
-- (Optional) A Slack Incoming Webhook URL
-
-## Backend setup
+Backend (Python 3.12+):
 
 ```bash
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-
-cp .env.example .env        # then fill in your values
-uvicorn app.main:app --reload
+python -m app.database.seed        # demo data: 3 classes, 8 assignments, 5 todos, 2 events
+uvicorn app.main:app --reload      # http://localhost:8000  (docs at /docs)
 ```
 
-The API runs on http://localhost:8000 (interactive docs at http://localhost:8000/docs).
-A sync runs immediately on startup and then every hour.
-
-## Frontend setup
+Frontend (Node 20.19+/22):
 
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev                        # http://localhost:5173
 ```
 
-The dashboard runs on http://localhost:5173 and talks to the backend at
-`VITE_API_URL` (defaults to `http://localhost:8000`). Copy `.env.example` to
-`.env` if you need to change it.
+Reseed from scratch any time with `python -m app.database.seed --force`.
 
-## Environment variables
+> Port taken? If something else is on 8000, run
+> `uvicorn app.main:app --reload --port 8080` and set
+> `VITE_API_URL=http://localhost:8080` in `frontend/.env`.
 
-Configured in `backend/.env` (see `backend/.env.example`):
-
-| Variable               | Description                                              | Default              |
-| ---------------------- | -------------------------------------------------------- | -------------------- |
-| `CANVAS_API_URL`       | Base URL of your Canvas instance (no trailing `/api/v1`) | —                    |
-| `CANVAS_ACCESS_TOKEN`  | Canvas personal access token                             | —                    |
-| `SLACK_WEBHOOK_URL`    | Slack Incoming Webhook (blank disables notifications)    | —                    |
-| `DATABASE_URL`         | SQLAlchemy database URL                                  | `sqlite:///canvas.db`|
-| `SYNC_INTERVAL_HOURS`  | Hours between background syncs                           | `1`                  |
-
-If Canvas is not configured, the app still starts and the sync is skipped with a
-warning — so you can boot everything before filling in credentials.
-
-## API endpoints
-
-| Method | Path                    | Description                                    |
-| ------ | ----------------------- | ---------------------------------------------- |
-| GET    | `/health`               | `{ "status": "ok" }`                           |
-| GET    | `/assignments`          | Every assignment                               |
-| GET    | `/assignments/today`    | Due today (UTC)                                |
-| GET    | `/assignments/week`     | Due within the next 7 days                     |
-| GET    | `/assignments/recent`   | First discovered within the last 24 hours      |
-| GET    | `/assignments/overdue`  | Due date already passed                        |
-| POST   | `/sync`                 | Trigger a Canvas sync immediately              |
-
-## How sync + notifications work
-
-Each sync fetches active courses and their assignments. Any assignment whose
-Canvas ID is not already in the database is inserted and collected into a
-"newly discovered" list. Existing assignments are refreshed (name, due date,
-`last_seen`). When the list is non-empty, a single Slack summary is posted:
-
-```
-📚 Canvas Update
-
-3 new assignments found
-
-• CS3510
-  Homework 7
-  Due Aug 2
-
-• MATH1554
-  Quiz 3
-  Due Tomorrow
-
-• APPH1040
-  Reflection
-  Due Friday
-```
-
-If no new assignments are found, no Slack message is sent.
-
-## Docker Compose
+### Docker
 
 ```bash
-cp backend/.env.example backend/.env   # fill in your values first
 docker compose up --build
 ```
 
-- Backend → http://localhost:8000
-- Frontend → http://localhost:5173
+Backend on `http://localhost:8000`, frontend on `http://localhost:5173`. The
+SQLite database lives in the `backend-data` volume. To seed demo data inside
+Docker: `docker compose exec backend python -m app.database.seed`.
 
-The SQLite file is persisted to `backend/data/` via a mounted volume.
+## Environment Variables
 
-## Notes
+Copy `.env.example` to `.env` (Docker) or `backend/.env` (local uvicorn).
+Everything has a sensible default.
 
-- **Timezones:** Canvas timestamps are stored as naive UTC for consistent
-  comparisons in SQLite; the date buckets (today/week/overdue) are evaluated in UTC.
-- **"Recently Added"** uses a local `first_seen` column (when this app first saw
-  the assignment), which is distinct from Canvas's own `created_at`.
-- No authentication is implemented — the backend is assumed to run locally.
+| Variable | Default | Purpose |
+| -------- | ------- | ------- |
+| `DATABASE_URL` | `sqlite:///./studentos.db` | SQLAlchemy database URL |
+| `CORS_ORIGINS` | localhost:5173 origins | Allowed frontend origins |
+| `GOOGLE_SHEETS_API_KEY` | empty | Optional; enables the official Sheets API |
+| `GOOGLE_SHEET_URL` | empty | Default/auto-sync sheet URL |
+| `AUTO_SYNC_ENABLED` | `false` | Periodic background re-import |
+| `SYNC_INTERVAL_MINUTES` | `60` | Auto-sync interval |
+| `VITE_API_URL` | `http://localhost:8000` | API base URL for the frontend |
+
+## Importing a Google Sheet
+
+1. Keep a sheet whose **first row** has the headers `Class`,
+   `Assignment Name`, `Due Date` (any extra columns are ignored):
+
+   | Class | Assignment Name | Due Date |
+   | ----- | --------------- | -------- |
+   | CS 250: Data Structures | Problem Set 5 | 2026-08-01 |
+
+2. Share it as **"Anyone with the link can view"** (File → Share). No API key
+   is needed for this — the backend uses the sheet's CSV export. If you set
+   `GOOGLE_SHEETS_API_KEY`, the official Sheets API v4 is used instead.
+3. In the app, open **Assignments → Import Google Sheet** (or Settings), paste
+   the URL and click Import. The URL is remembered for next time.
+
+Import behavior:
+
+- New rows become new assignments (status *Todo*, priority *Medium*).
+- Rows matching an existing assignment (same class + name, case-insensitive)
+  with a **changed due date** update that due date.
+- Identical rows are skipped; classes named in the sheet that don't exist yet
+  are created automatically.
+- Rows with missing values or unparseable dates are reported, not imported.
+  Dates may be `2026-08-01`, `8/1/2026`, `Aug 1 2026`, etc.
+
+Set `GOOGLE_SHEET_URL` + `AUTO_SYNC_ENABLED=true` to have APScheduler re-import
+the sheet every `SYNC_INTERVAL_MINUTES` in the background.
+
+## REST API
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/health` | Liveness check |
+| GET | `/dashboard` | Aggregated dashboard payload |
+| GET/POST | `/classes` | List / create classes |
+| GET/PUT/DELETE | `/classes/{id}` | Read / update / delete a class |
+| GET/POST | `/assignments` | List (`?class_id=` filter) / create |
+| PUT/DELETE | `/assignments/{id}` | Update / delete |
+| GET/POST | `/todos` | List / create to-dos |
+| PUT | `/todos/reorder` | Persist drag-and-drop order |
+| PUT/DELETE | `/todos/{id}` | Update / delete |
+| GET/POST | `/events` | List / create events |
+| PUT/DELETE | `/events/{id}` | Update / delete |
+| POST | `/import/google-sheet` | Run a sheet import |
+
+Interactive docs: `http://localhost:8000/docs`.
+
+## Roadmap (architecture in place, not yet implemented)
+
+Canvas API sync · Google Calendar sync · Slack/Discord notifications · grade
+tracking · study timer · per-class notes · document uploads · recurring tasks ·
+authentication · mobile app.
