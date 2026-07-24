@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 
+import { RecurrenceFields } from "@/components/shared/RecurrenceFields";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,6 +22,7 @@ import type {
   AssignmentPayload,
   AssignmentStatus,
   Priority,
+  RecurrenceFrequency,
 } from "@/types";
 import { PRIORITY_OPTIONS, STATUS_OPTIONS } from "@/utils/constants";
 
@@ -31,6 +33,8 @@ interface AssignmentFormState {
   status: AssignmentStatus;
   priority: Priority;
   notes: string;
+  recurrence_frequency: RecurrenceFrequency | "";
+  recurrence_interval: number;
 }
 
 const emptyForm: AssignmentFormState = {
@@ -40,6 +44,8 @@ const emptyForm: AssignmentFormState = {
   status: "todo",
   priority: "medium",
   notes: "",
+  recurrence_frequency: "",
+  recurrence_interval: 1,
 };
 
 function fromAssignment(assignment: Assignment): AssignmentFormState {
@@ -50,6 +56,8 @@ function fromAssignment(assignment: Assignment): AssignmentFormState {
     status: assignment.status,
     priority: assignment.priority,
     notes: assignment.notes ?? "",
+    recurrence_frequency: assignment.recurrence_frequency ?? "",
+    recurrence_interval: assignment.recurrence_interval,
   };
 }
 
@@ -104,6 +112,8 @@ export function AssignmentFormDialog({
       status: form.status,
       priority: form.priority,
       notes: form.notes.trim() || null,
+      recurrence_frequency: form.recurrence_frequency || null,
+      recurrence_interval: form.recurrence_interval,
     };
     const options = {
       onSuccess: () => {
@@ -209,6 +219,16 @@ export function AssignmentFormDialog({
                 </Select>
               </div>
             </div>
+            <RecurrenceFields
+              frequency={form.recurrence_frequency}
+              interval={form.recurrence_interval}
+              onFrequencyChange={(recurrence_frequency) =>
+                setForm({ ...form, recurrence_frequency })
+              }
+              onIntervalChange={(recurrence_interval) =>
+                setForm({ ...form, recurrence_interval })
+              }
+            />
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="assignment-notes">Notes</Label>
               <Textarea

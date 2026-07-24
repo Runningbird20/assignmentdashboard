@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import ConflictError, NotFoundError
 from app.models import SchoolClass
 from app.schemas.school_class import ClassCreate, ClassUpdate
+from app.services import file_storage
 
 
 def list_classes(db: Session) -> list[SchoolClass]:
@@ -53,7 +54,12 @@ def update_class(db: Session, class_id: int, payload: ClassUpdate) -> SchoolClas
 
 
 def delete_class(db: Session, class_id: int) -> None:
-    db.delete(get_class(db, class_id))
+    school_class = get_class(db, class_id)
+    # The DB rows cascade-delete via the relationship, but the on-disk blobs
+    # don't clean themselves up — remove them explicitly first.
+    for class_file in school_class.files:
+        file_storage.delete(class_file.storage_key)
+    db.delete(school_class)
     db.commit()
 
 

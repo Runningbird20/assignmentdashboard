@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.enums import AssignmentStatus, Priority
+from app.models.enums import AssignmentStatus, Priority, RecurrenceFrequency
 
 
 class AssignmentBase(BaseModel):
@@ -12,6 +12,8 @@ class AssignmentBase(BaseModel):
     status: AssignmentStatus = AssignmentStatus.TODO
     priority: Priority = Priority.MEDIUM
     notes: str | None = None
+    recurrence_frequency: RecurrenceFrequency | None = None
+    recurrence_interval: int = Field(default=1, ge=1)
 
 
 class AssignmentCreate(AssignmentBase):
@@ -25,6 +27,8 @@ class AssignmentUpdate(BaseModel):
     status: AssignmentStatus | None = None
     priority: Priority | None = None
     notes: str | None = None
+    recurrence_frequency: RecurrenceFrequency | None = None
+    recurrence_interval: int | None = Field(default=None, ge=1)
 
 
 class AssignmentRead(AssignmentBase):

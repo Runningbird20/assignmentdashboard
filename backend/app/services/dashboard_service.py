@@ -10,14 +10,20 @@ from app.schemas.dashboard import DashboardRead, DashboardStats, TodaysTasks
 from app.schemas.event import EventRead
 from app.schemas.school_class import ClassRead
 from app.schemas.todo import TodoRead
+from app.services import recurrence_service
+from app.utils.course_code import extract_course_code
 from app.utils.dates import day_abbrev
 
 
 def get_dashboard(db: Session) -> DashboardRead:
+    recurrence_service.generate_due_recurrences(db)
     today = date.today()
     week_end = today + timedelta(days=7)
 
     classes = list(db.scalars(select(SchoolClass).order_by(SchoolClass.name)))
+    # Lecture/lab/recitation/exam sections of the same course share a code
+    # (e.g. "MATH 1554: ...") and count as one class, not several.
+    distinct_courses = {extract_course_code(c.name).lower() for c in classes}
     todays_schedule = [
         c for c in classes if day_abbrev(today) in (c.meeting_days or "").split(",")
     ]
@@ -57,7 +63,7 @@ def get_dashboard(db: Session) -> DashboardRead:
         due_this_week=[AssignmentRead.model_validate(a) for a in due_this_week],
         upcoming_events=[EventRead.model_validate(e) for e in upcoming_events],
         stats=DashboardStats(
-            total_classes=len(classes),
+            total_classes=len(distinct_courses),
             assignments_remaining=len(incomplete),
             due_this_week=len(due_this_week),
             completed_assignments=len(assignments) - len(incomplete),

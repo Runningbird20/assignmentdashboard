@@ -1,4 +1,10 @@
-import type { AssignmentStatus, EventType, Priority } from "@/types";
+import type {
+  AssignmentStatus,
+  EventType,
+  Priority,
+  RecurrenceFrequency,
+  SectionType,
+} from "@/types";
 
 export const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
@@ -39,6 +45,37 @@ export const EVENT_TYPE_COLORS: Record<EventType, string> = {
   social: "#10b981",
   other: "#64748b",
 };
+
+export const SECTION_TYPE_LABELS: Record<SectionType, string> = {
+  lecture: "Lecture",
+  lab: "Lab",
+  recitation: "Recitation",
+  exam: "Exam",
+  other: "Other",
+};
+
+export const SECTION_TYPE_OPTIONS = (
+  Object.entries(SECTION_TYPE_LABELS) as [SectionType, string][]
+).map(([value, label]) => ({ value, label }));
+
+export const RECURRENCE_FREQUENCY_LABELS: Record<RecurrenceFrequency, string> = {
+  daily: "Day(s)",
+  weekly: "Week(s)",
+  monthly: "Month(s)",
+};
+
+export const RECURRENCE_FREQUENCY_OPTIONS = (
+  Object.entries(RECURRENCE_FREQUENCY_LABELS) as [RecurrenceFrequency, string][]
+).map(([value, label]) => ({ value, label }));
+
+/** e.g. "Repeats every 2 weeks" / "Repeats daily" */
+export function describeRecurrence(
+  frequency: RecurrenceFrequency,
+  interval: number,
+): string {
+  const unit = { daily: "day", weekly: "week", monthly: "month" }[frequency];
+  return interval === 1 ? `Repeats every ${unit}` : `Repeats every ${interval} ${unit}s`;
+}
 
 export const STATUS_OPTIONS = (
   Object.entries(STATUS_LABELS) as [AssignmentStatus, string][]

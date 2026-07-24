@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.session import Base
 from app.models.base import TimestampMixin
-from app.models.enums import Priority
+from app.models.enums import Priority, RecurrenceFrequency
 
 
 class Todo(TimestampMixin, Base):
@@ -27,3 +27,14 @@ class Todo(TimestampMixin, Base):
     due_date: Mapped[date | None] = mapped_column(Date)
     # Manual ordering position for drag-and-drop.
     sort_order: Mapped[int] = mapped_column(default=0, index=True)
+    # When set, services/recurrence_service.py rolls this forward into a new
+    # todo once due_date arrives, then clears this field on the old row.
+    recurrence_frequency: Mapped[RecurrenceFrequency | None] = mapped_column(
+        SAEnum(
+            RecurrenceFrequency,
+            values_callable=lambda enum: [member.value for member in enum],
+            native_enum=False,
+            length=10,
+        ),
+    )
+    recurrence_interval: Mapped[int] = mapped_column(default=1)

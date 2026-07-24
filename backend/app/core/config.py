@@ -15,9 +15,13 @@ class Settings(BaseSettings):
 
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
-    # Google Sheets import. The API key is optional: public sheets can be
-    # fetched through the CSV export endpoint without one.
-    google_sheets_api_key: str | None = None
+    # Where uploaded class files are stored on disk. Swappable: everything
+    # that touches storage goes through services/file_storage.py, so moving
+    # to S3-compatible storage later only means rewriting that one module.
+    upload_dir: str = "./uploads"
+
+    # Google Sheets import: fetched via the sheet's public CSV export
+    # endpoint, so the sheet must be shared as "Anyone with the link can view".
     google_sheet_url: str | None = None
 
     # Background auto-sync of the configured sheet.

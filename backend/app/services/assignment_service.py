@@ -4,10 +4,11 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import ConflictError, NotFoundError
 from app.models import Assignment
 from app.schemas.assignment import AssignmentCreate, AssignmentUpdate
-from app.services import class_service
+from app.services import class_service, recurrence_service
 
 
 def list_assignments(db: Session, class_id: int | None = None) -> list[Assignment]:
+    recurrence_service.generate_due_recurrences(db)
     stmt = select(Assignment).order_by(Assignment.due_date, Assignment.name)
     if class_id is not None:
         stmt = stmt.where(Assignment.class_id == class_id)

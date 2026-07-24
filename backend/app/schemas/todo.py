@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.enums import Priority
+from app.models.enums import Priority, RecurrenceFrequency
 
 
 class TodoBase(BaseModel):
@@ -11,6 +11,8 @@ class TodoBase(BaseModel):
     priority: Priority = Priority.MEDIUM
     completed: bool = False
     due_date: date | None = None
+    recurrence_frequency: RecurrenceFrequency | None = None
+    recurrence_interval: int = Field(default=1, ge=1)
 
 
 class TodoCreate(TodoBase):
@@ -23,6 +25,8 @@ class TodoUpdate(BaseModel):
     priority: Priority | None = None
     completed: bool | None = None
     due_date: date | None = None
+    recurrence_frequency: RecurrenceFrequency | None = None
+    recurrence_interval: int | None = Field(default=None, ge=1)
 
 
 class TodoReorder(BaseModel):

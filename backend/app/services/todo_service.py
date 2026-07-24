@@ -4,9 +4,11 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import NotFoundError
 from app.models import Todo
 from app.schemas.todo import TodoCreate, TodoUpdate
+from app.services import recurrence_service
 
 
 def list_todos(db: Session) -> list[Todo]:
+    recurrence_service.generate_due_recurrences(db)
     return list(db.scalars(select(Todo).order_by(Todo.sort_order, Todo.id)))
 
 

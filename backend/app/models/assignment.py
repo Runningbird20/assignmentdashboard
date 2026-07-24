@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.session import Base
 from app.models.base import TimestampMixin
-from app.models.enums import AssignmentStatus, Priority
+from app.models.enums import AssignmentStatus, Priority, RecurrenceFrequency
 from app.models.school_class import SchoolClass
 
 
@@ -40,6 +40,20 @@ class Assignment(TimestampMixin, Base):
         default=Priority.MEDIUM,
     )
     notes: Mapped[str | None] = mapped_column(Text)
+    # When set, services/recurrence_service.py rolls this forward into a new
+    # assignment once due_date arrives, then clears this field on the old
+    # row. Generated follow-ups get the due date appended to their name
+    # (e.g. "Weekly Quiz (Aug 11)") since (class_id, name) must stay unique —
+    # see recurrence_service.py's docstring for why.
+    recurrence_frequency: Mapped[RecurrenceFrequency | None] = mapped_column(
+        SAEnum(
+            RecurrenceFrequency,
+            values_callable=lambda enum: [member.value for member in enum],
+            native_enum=False,
+            length=10,
+        ),
+    )
+    recurrence_interval: Mapped[int] = mapped_column(default=1)
 
     # Eagerly joined so read schemas can expose class_name/class_color.
     school_class: Mapped[SchoolClass] = relationship(

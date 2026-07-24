@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ArrowUpDown, CheckCircle2, Pencil, RotateCcw, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, CheckCircle2, Pencil, Repeat, RotateCcw, Trash2 } from "lucide-react";
 
 import { PriorityBadge } from "@/components/shared/PriorityBadge";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import type { Assignment } from "@/types";
 import { cn } from "@/utils/cn";
+import { describeRecurrence } from "@/utils/constants";
 import { describeDueDate, formatDate } from "@/utils/date";
 
 export type AssignmentSortKey = "due_date" | "priority" | "class";
@@ -122,8 +123,26 @@ export function AssignmentsTable({
                 </div>
               </TableCell>
               <TableCell>
-                <span className={cn("font-medium", isComplete && "text-muted-foreground line-through")}>
-                  {assignment.name}
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "font-medium",
+                      isComplete && "text-muted-foreground line-through",
+                    )}
+                  >
+                    {assignment.name}
+                  </span>
+                  {assignment.recurrence_frequency ? (
+                    <span
+                      title={describeRecurrence(
+                        assignment.recurrence_frequency,
+                        assignment.recurrence_interval,
+                      )}
+                      className="shrink-0"
+                    >
+                      <Repeat className="size-3 text-muted-foreground" />
+                    </span>
+                  ) : null}
                 </span>
               </TableCell>
               <TableCell>

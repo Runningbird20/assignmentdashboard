@@ -11,6 +11,7 @@ import {
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
+import { SectionTypeBadge } from "@/components/shared/SectionTypeBadge";
 import { PageLoader } from "@/components/shared/Spinner";
 import { StatCard } from "@/components/shared/StatCard";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +25,7 @@ import { useDashboard } from "@/hooks/useDashboard";
 import type { Assignment } from "@/types";
 import { cn } from "@/utils/cn";
 import { EVENT_TYPE_LABELS } from "@/utils/constants";
+import { stripSectionTypeSuffix } from "@/utils/courseCode";
 import { describeDueDate, formatDate, formatDateTime, greeting } from "@/utils/date";
 
 function SectionCard({ title, children }: { title: string; children: ReactNode }) {
@@ -129,13 +131,18 @@ export function DashboardPage() {
                   style={{ backgroundColor: schoolClass.color }}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{schoolClass.name}</p>
+                  <p className="truncate text-sm font-medium">
+                    {stripSectionTypeSuffix(schoolClass.name, schoolClass.section_type)}
+                  </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {[schoolClass.meeting_time, schoolClass.location]
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
                 </div>
+                {schoolClass.section_type ? (
+                  <SectionTypeBadge sectionType={schoolClass.section_type} />
+                ) : null}
               </Link>
             ))
           )}

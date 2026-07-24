@@ -32,8 +32,8 @@ _IMPORT_COLORS = (
 )
 
 
-def sync_from_sheet(db: Session, sheet_url: str, api_key: str | None) -> ImportSummary:
-    rows = fetch_sheet_rows(sheet_url, api_key)
+def sync_from_sheet(db: Session, sheet_url: str) -> ImportSummary:
+    rows = fetch_sheet_rows(sheet_url)
     if not rows:
         raise SheetImportError("The sheet is empty.")
 

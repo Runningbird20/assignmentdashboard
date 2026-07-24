@@ -1,4 +1,4 @@
-import { CheckSquare, Plus } from "lucide-react";
+import { CheckSquare, Plus, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -32,6 +32,8 @@ export function TodosPage() {
   const [editing, setEditing] = useState<Todo | null>(null);
   const [deleting, setDeleting] = useState<Todo | null>(null);
   const [dragId, setDragId] = useState<number | null>(null);
+  const [deleteCompletedOpen, setDeleteCompletedOpen] = useState(false);
+  const [deletingCompleted, setDeletingCompleted] = useState(false);
 
   const active = todos.filter((todo) => !todo.completed);
   const completed = todos.filter((todo) => todo.completed);
@@ -74,6 +76,29 @@ export function TodosPage() {
       onSuccess: () => toast({ title: "To-do deleted", variant: "success" }),
       onError: (error: Error) =>
         toast({ title: "Delete failed", description: error.message, variant: "destructive" }),
+    });
+  };
+
+  const handleDeleteAllCompleted = async () => {
+    setDeletingCompleted(true);
+    let deleted = 0;
+    const errors: string[] = [];
+
+    for (const todo of completed) {
+      try {
+        await deleteTodo.mutateAsync(todo.id);
+        deleted += 1;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Delete failed";
+        errors.push(`${todo.title}: ${message}`);
+      }
+    }
+
+    setDeletingCompleted(false);
+    toast({
+      title: `${deleted} of ${completed.length} completed to-dos deleted`,
+      description: errors.length > 0 ? errors.join(" · ") : undefined,
+      variant: errors.length > 0 ? "destructive" : "success",
     });
   };
 
@@ -144,9 +169,21 @@ export function TodosPage() {
 
           {completed.length > 0 && (
             <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Completed ({completed.length})
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Completed ({completed.length})
+                </p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto py-1 text-xs text-muted-foreground hover:text-red-500"
+                  disabled={deletingCompleted}
+                  onClick={() => setDeleteCompletedOpen(true)}
+                >
+                  <Trash2 className="size-3.5" />
+                  {deletingCompleted ? "Deleting…" : "Delete Completed"}
+                </Button>
+              </div>
               {completed.map((todo) => (
                 <TodoItem
                   key={todo.id}
@@ -175,6 +212,15 @@ export function TodosPage() {
         confirmLabel="Delete"
         destructive
         onConfirm={handleDelete}
+      />
+      <ConfirmDialog
+        open={deleteCompletedOpen}
+        onOpenChange={setDeleteCompletedOpen}
+        title={`Delete all ${completed.length} completed to-dos?`}
+        description="This cannot be undone."
+        confirmLabel="Delete All"
+        destructive
+        onConfirm={handleDeleteAllCompleted}
       />
     </div>
   );

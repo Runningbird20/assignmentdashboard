@@ -5,8 +5,10 @@ from app.routers import (
     classes,
     dashboard,
     events,
+    files,
     health,
     imports,
+    notes,
     todos,
 )
 
@@ -20,5 +22,7 @@ for module_router in (
     events.router,
     dashboard.router,
     imports.router,
+    files.router,
+    notes.router,
 ):
     api_router.include_router(module_router)

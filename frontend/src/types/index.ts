@@ -1,6 +1,8 @@
 export type Priority = "low" | "medium" | "high";
 export type AssignmentStatus = "todo" | "in_progress" | "waiting" | "complete";
 export type EventType = "exam" | "meeting" | "social" | "other";
+export type SectionType = "lecture" | "lab" | "recitation" | "exam" | "other";
+export type RecurrenceFrequency = "daily" | "weekly" | "monthly";
 
 export interface SchoolClass {
   id: number;
@@ -11,6 +13,7 @@ export interface SchoolClass {
   meeting_time: string | null;
   office_hours: string | null;
   color: string;
+  section_type: SectionType | null;
   created_at: string;
   updated_at: string;
 }
@@ -23,6 +26,7 @@ export interface ClassPayload {
   meeting_time?: string | null;
   office_hours?: string | null;
   color: string;
+  section_type?: SectionType | null;
 }
 
 export interface Assignment {
@@ -35,6 +39,8 @@ export interface Assignment {
   status: AssignmentStatus;
   priority: Priority;
   notes: string | null;
+  recurrence_frequency: RecurrenceFrequency | null;
+  recurrence_interval: number;
   created_at: string;
   updated_at: string;
 }
@@ -46,6 +52,8 @@ export interface AssignmentPayload {
   status: AssignmentStatus;
   priority: Priority;
   notes?: string | null;
+  recurrence_frequency?: RecurrenceFrequency | null;
+  recurrence_interval?: number;
 }
 
 export interface Todo {
@@ -56,6 +64,8 @@ export interface Todo {
   completed: boolean;
   due_date: string | null;
   sort_order: number;
+  recurrence_frequency: RecurrenceFrequency | null;
+  recurrence_interval: number;
   created_at: string;
   updated_at: string;
 }
@@ -66,6 +76,8 @@ export interface TodoPayload {
   priority: Priority;
   completed?: boolean;
   due_date?: string | null;
+  recurrence_frequency?: RecurrenceFrequency | null;
+  recurrence_interval?: number;
 }
 
 export interface EventItem {
@@ -104,4 +116,46 @@ export interface ImportSummary {
   updated: number;
   skipped: number;
   errors: string[];
+}
+
+export interface ParsedClassPreview {
+  name: string;
+  professor: string | null;
+  location: string | null;
+  meeting_days: string[];
+  meeting_time: string | null;
+  color: string;
+  warning: string | null;
+  section_type: SectionType | null;
+  needs_section_type: boolean;
+}
+
+export interface IcsParseResult {
+  classes: ParsedClassPreview[];
+  skipped_events: number;
+  warnings: string[];
+}
+
+export interface ClassFile {
+  id: number;
+  class_id: number;
+  filename: string;
+  content_type: string | null;
+  size_bytes: number;
+  created_at: string;
+}
+
+export interface Note {
+  id: number;
+  class_id: number;
+  title: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NotePayload {
+  class_id: number;
+  title: string;
+  body?: string;
 }

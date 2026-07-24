@@ -10,10 +10,14 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  headers: HeadersInit = { "Content-Type": "application/json" },
+): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers: { ...headers, ...init?.headers },
   });
 
   if (!response.ok) {
@@ -38,4 +42,7 @@ export const api = {
   put: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PUT", body: JSON.stringify(body) }),
   delete: (path: string) => request<void>(path, { method: "DELETE" }),
+  // No Content-Type override: the browser sets the multipart boundary itself.
+  postForm: <T>(path: string, body: FormData) =>
+    request<T>(path, { method: "POST", body }, {}),
 };

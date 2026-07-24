@@ -11,11 +11,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
 import { useCreateClass, useUpdateClass } from "@/hooks/useClasses";
-import type { ClassPayload, SchoolClass } from "@/types";
+import type { ClassPayload, SchoolClass, SectionType } from "@/types";
 import { cn } from "@/utils/cn";
-import { CLASS_COLORS, WEEKDAYS } from "@/utils/constants";
+import { CLASS_COLORS, SECTION_TYPE_OPTIONS, WEEKDAYS } from "@/utils/constants";
 
 interface ClassFormState {
   name: string;
@@ -25,6 +26,7 @@ interface ClassFormState {
   meeting_time: string;
   office_hours: string;
   color: string;
+  section_type: SectionType | "";
 }
 
 const emptyForm: ClassFormState = {
@@ -35,6 +37,7 @@ const emptyForm: ClassFormState = {
   meeting_time: "",
   office_hours: "",
   color: CLASS_COLORS[0],
+  section_type: "",
 };
 
 function fromClass(schoolClass: SchoolClass): ClassFormState {
@@ -46,6 +49,7 @@ function fromClass(schoolClass: SchoolClass): ClassFormState {
     meeting_time: schoolClass.meeting_time ?? "",
     office_hours: schoolClass.office_hours ?? "",
     color: schoolClass.color,
+    section_type: schoolClass.section_type ?? "",
   };
 }
 
@@ -95,6 +99,7 @@ export function ClassFormDialog({
       meeting_time: form.meeting_time.trim() || null,
       office_hours: form.office_hours.trim() || null,
       color: form.color,
+      section_type: form.section_type || null,
     };
     const options = {
       onSuccess: () => {
@@ -173,6 +178,27 @@ export function ClassFormDialog({
                 </button>
               ))}
             </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="class-section-type">Section Type</Label>
+            <Select
+              id="class-section-type"
+              value={form.section_type}
+              onChange={(e) =>
+                setForm({ ...form, section_type: e.target.value as SectionType | "" })
+              }
+            >
+              <option value="">Not set</option>
+              {SECTION_TYPE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Set this when a course has more than one section (e.g. a
+              lecture and a separate lab) so they can be told apart.
+            </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">

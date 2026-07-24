@@ -9,6 +9,9 @@ venv/
 *.db
 *.sqlite3
 
+# Uploaded class files
+backend/uploads/
+
 # Environment
 .env
 
@@ -20,3 +23,8 @@ dist/
 .DS_Store
 .idea/
 .vscode/
+
+# Personal schedule files used to test the GT Scheduler import
+schedule.png
+gt-scheduler.ics
+*.ics

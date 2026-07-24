@@ -11,6 +11,7 @@ from datetime import date, datetime, time, timedelta
 from sqlalchemy import select
 
 import app.models  # noqa: F401  (registers all models on Base.metadata)
+from app.database.migrations import run_migrations
 from app.database.session import Base, SessionLocal, engine
 from app.models import Assignment, Event, SchoolClass, Todo
 from app.models.enums import AssignmentStatus, EventType, Priority
@@ -18,6 +19,7 @@ from app.models.enums import AssignmentStatus, EventType, Priority
 
 def seed(force: bool = False) -> None:
     Base.metadata.create_all(bind=engine)
+    run_migrations(engine)
     db = SessionLocal()
     try:
         if db.scalar(select(SchoolClass).limit(1)) is not None:

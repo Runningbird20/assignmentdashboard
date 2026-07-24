@@ -3,6 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.models.enums import SectionType
+
 Weekday = Literal["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 COLOR_PATTERN = r"^#[0-9a-fA-F]{6}$"
@@ -22,6 +24,7 @@ class ClassBase(BaseModel):
     meeting_time: str | None = Field(default=None, max_length=60)
     office_hours: str | None = Field(default=None, max_length=120)
     color: str = Field(default="#3b82f6", pattern=COLOR_PATTERN)
+    section_type: SectionType | None = None
 
     split_meeting_days = field_validator("meeting_days", mode="before")(_split_days)
 
@@ -38,6 +41,7 @@ class ClassUpdate(BaseModel):
     meeting_time: str | None = Field(default=None, max_length=60)
     office_hours: str | None = Field(default=None, max_length=120)
     color: str | None = Field(default=None, pattern=COLOR_PATTERN)
+    section_type: SectionType | None = None
 
     split_meeting_days = field_validator("meeting_days", mode="before")(_split_days)
 

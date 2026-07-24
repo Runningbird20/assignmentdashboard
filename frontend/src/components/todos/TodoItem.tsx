@@ -1,10 +1,11 @@
-import { GripVertical, Pencil, Trash2 } from "lucide-react";
+import { GripVertical, Pencil, Repeat, Trash2 } from "lucide-react";
 import type { DragEvent } from "react";
 
 import { PriorityBadge } from "@/components/shared/PriorityBadge";
 import { Button } from "@/components/ui/button";
 import type { Todo } from "@/types";
 import { cn } from "@/utils/cn";
+import { describeRecurrence } from "@/utils/constants";
 import { describeDueDate } from "@/utils/date";
 
 const dueToneClasses = {
@@ -64,11 +65,19 @@ export function TodoItem({
       <div className="min-w-0 flex-1">
         <p
           className={cn(
-            "truncate text-sm font-medium",
+            "flex items-center gap-1.5 truncate text-sm font-medium",
             todo.completed && "text-muted-foreground line-through",
           )}
         >
-          {todo.title}
+          <span className="truncate">{todo.title}</span>
+          {todo.recurrence_frequency ? (
+            <span
+              title={describeRecurrence(todo.recurrence_frequency, todo.recurrence_interval)}
+              className="shrink-0"
+            >
+              <Repeat className="size-3 text-muted-foreground" />
+            </span>
+          ) : null}
         </p>
         {todo.description ? (
           <p className="truncate text-xs text-muted-foreground">{todo.description}</p>

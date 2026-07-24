@@ -24,6 +24,14 @@ class SheetImportError(AppError):
     status_code = 400
 
 
+class IcsImportError(AppError):
+    status_code = 400
+
+
+class FileUploadError(AppError):
+    status_code = 400
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def handle_app_error(_request: Request, exc: AppError) -> JSONResponse:

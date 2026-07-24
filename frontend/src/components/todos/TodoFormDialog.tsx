@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 
+import { RecurrenceFields } from "@/components/shared/RecurrenceFields";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,7 +16,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { useCreateTodo, useUpdateTodo } from "@/hooks/useTodos";
-import type { Priority, Todo, TodoPayload } from "@/types";
+import type { Priority, RecurrenceFrequency, Todo, TodoPayload } from "@/types";
 import { PRIORITY_OPTIONS } from "@/utils/constants";
 
 interface TodoFormState {
@@ -23,6 +24,8 @@ interface TodoFormState {
   description: string;
   due_date: string;
   priority: Priority;
+  recurrence_frequency: RecurrenceFrequency | "";
+  recurrence_interval: number;
 }
 
 const emptyForm: TodoFormState = {
@@ -30,6 +33,8 @@ const emptyForm: TodoFormState = {
   description: "",
   due_date: "",
   priority: "medium",
+  recurrence_frequency: "",
+  recurrence_interval: 1,
 };
 
 export function TodoFormDialog({
@@ -57,6 +62,8 @@ export function TodoFormDialog({
               description: initial.description ?? "",
               due_date: initial.due_date ?? "",
               priority: initial.priority,
+              recurrence_frequency: initial.recurrence_frequency ?? "",
+              recurrence_interval: initial.recurrence_interval,
             }
           : emptyForm,
       );
@@ -70,11 +77,17 @@ export function TodoFormDialog({
       setError("A title is required.");
       return;
     }
+    if (form.recurrence_frequency && !form.due_date) {
+      setError("A due date is required for a repeating to-do.");
+      return;
+    }
     const payload: TodoPayload = {
       title: form.title.trim(),
       description: form.description.trim() || null,
       due_date: form.due_date || null,
       priority: form.priority,
+      recurrence_frequency: form.recurrence_frequency || null,
+      recurrence_interval: form.recurrence_interval,
     };
     const options = {
       onSuccess: () => {
@@ -139,6 +152,16 @@ export function TodoFormDialog({
               </Select>
             </div>
           </div>
+          <RecurrenceFields
+            frequency={form.recurrence_frequency}
+            interval={form.recurrence_interval}
+            onFrequencyChange={(recurrence_frequency) =>
+              setForm({ ...form, recurrence_frequency })
+            }
+            onIntervalChange={(recurrence_interval) =>
+              setForm({ ...form, recurrence_interval })
+            }
+          />
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="todo-description">Notes</Label>
             <Textarea
